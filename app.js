@@ -11,6 +11,7 @@ var uiController = (function () {
     incomeLabel: ".budget__income--value",
     expenseLabel: ".budget__expenses--value",
     percentageLabel: ".budget__expenses--percentage",
+    containerDiv: ".container",
   };
   return {
     getInput: function () {
@@ -53,17 +54,21 @@ var uiController = (function () {
       document.querySelector(DOMstrings.percentageLabel).textContent =
         tusuv.huvi + "%";
     },
+    deletListItem: function (id) {
+      var el = document.getElementById(id);
+      el.parentNode.removeChild(el);
+    },
     addListItem: function (item, type) {
       //Орлого зарлагын аль нэг утгыг агуулсан hmtl-ийг бэлтгэнэ.
       var html, list;
       if (type === "inc") {
         list = DOMstrings.incomeList;
         html =
-          '<div class="item clearfix" id="income-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">+ %value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+          '<div class="item clearfix" id="inc-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">+ %value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
       } else {
         list = DOMstrings.expenseList;
         html =
-          '<div class="item clearfix" id="expense-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">- %value%</div><div class="item__percentage">%per%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+          '<div class="item clearfix" id="exp-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">- %value%</div><div class="item__percentage">%per%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
       }
       //Тэр html дотроо орлого зарлагын утгуудыг REPLACE  ашиглаж өөрчилж өгнө.
       html = html.replace("%id%", item.id);
@@ -127,6 +132,16 @@ var financeController = (function () {
         totalExp: data.totals.exp,
       };
     },
+    deleteItem: function (type, id) {
+      console.log("daataaa:   " + data.items);
+      var ids = data.items[type].map(function (el) {
+        return el.id;
+      });
+      var index = ids.indexOf(id);
+      if (index !== -1) {
+        data.items[type].splice(index, 1);
+      }
+    },
     addItem: function (type, desc, val) {
       var item, id;
       //identification
@@ -154,7 +169,8 @@ var appController = (function (uiController, financeController) {
     // 1. Оруулах өгөгдлийг дэлгэцээс олж авна.
     var input = uiController.getInput();
     console.log(input);
-    if (input.description != 0 && input.value != 0) {
+    if (isNaN(input.value)) {
+    } else if (input.description !== "") {
       // 2. Олж авсан өгөгдлүүдээ санхүүгийн контроллерт дамжуулж тэнд хадгална.
       var item = financeController.addItem(
         input.type,
@@ -171,6 +187,9 @@ var appController = (function (uiController, financeController) {
       // 6. Төсвийн тооцоог дэлгэцэнд гаргана.
       uiController.tusviigUzuuleh(tusuv);
     }
+    /* if (input.description != 0 && input.value != 0) {
+      
+    } */
   };
 
   var setupEventListener = function () {
@@ -183,6 +202,22 @@ var appController = (function (uiController, financeController) {
         ctrlAddItem();
       }
     });
+    document
+      .querySelector(DOM.containerDiv)
+      .addEventListener("click", function (event) {
+        var id = event.target.parentNode.parentNode.parentNode.parentNode.id;
+        if (id) {
+          var arr = id.split("-");
+          var type = arr[0];
+          var itemId = parseInt(arr[1]);
+          console.log("daataaaaaa: " + type + " ===> " + itemId);
+          // Санхүүгий модулиас type,  id .ашиглаад устгана
+          financeController.deleteItem(type, itemId);
+          // Дэлгэц дээрээс энэ элементийг устгана
+          uiController.deletListItem(id);
+          // Үлдэгдэл тооцоог шинэчилж харуулна.
+        }
+      });
   };
 
   return {
